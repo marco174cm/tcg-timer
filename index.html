@@ -190,6 +190,29 @@
       color: white;
     }
 
+    .time-adjust {
+      display: flex;
+      gap: 1vw;
+      margin-top: 2.5vh;
+      justify-content: center;
+    }
+
+    .btn-adjust {
+      padding: 1.2vh 1.8vw;
+      font-size: 1.3vw;
+      min-width: 5vw;
+    }
+
+    .btn-minus {
+      background: linear-gradient(135deg, #888 0%, #666 100%);
+      color: white;
+    }
+
+    .btn-plus {
+      background: linear-gradient(135deg, #A67CC5 0%, #9066b0 100%);
+      color: white;
+    }
+
 
     /* 左側エリア（動画側） */
     .left-area {
@@ -215,7 +238,8 @@
       box-sizing: border-box;
     }
 
-    .youtube-wrapper iframe {
+    .youtube-wrapper iframe,
+    .youtube-wrapper #ytPlayer {
       width: 100%;
       height: 100%;
       border: none;
@@ -380,11 +404,7 @@
             <!-- YOUR_PLAYLIST_ID を実際のプレイリストIDに変更  -->
             <!-- 例: PLxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx        -->
             <!-- ============================================== -->
-            <iframe
-              src="https://www.youtube.com/embed/videoseries?list=PLou8fhsKysc3qEC8m2-E8JUhg0-VxYB_a&autoplay=1&controls=1&loop=1&mute=1"
-              allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
-              allowfullscreen>
-            </iframe>
+            <div id="ytPlayer"></div>
           </div>
         </section>
 
@@ -404,6 +424,13 @@
         <div class="timer-card">
           <div class="timer-label">BATTLE TIMER</div>
           <div class="timer-display" id="timerDisplay">25:00</div>
+
+          <div class="time-adjust">
+            <button class="btn btn-adjust btn-minus" onclick="adjustTime(-60)">-1:00</button>
+            <button class="btn btn-adjust btn-minus" onclick="adjustTime(-10)">-0:10</button>
+            <button class="btn btn-adjust btn-plus" onclick="adjustTime(10)">+0:10</button>
+            <button class="btn btn-adjust btn-plus" onclick="adjustTime(60)">+1:00</button>
+          </div>
 
           <div class="controls">
             <button class="btn btn-start" id="startBtn" onclick="startTimer()">START</button>
@@ -425,6 +452,65 @@
   </div>
 
   <script>
+    // === YouTube IFrame Player API ===
+    const PLAYLIST_ID = 'PLou8fhsKysc3qEC8m2-E8JUhg0-VxYB_a';
+    let ytPlayer = null;
+
+    // API読み込み
+    const tag = document.createElement('script');
+    tag.src = 'https://www.youtube.com/iframe_api';
+    document.head.appendChild(tag);
+
+    function onYouTubeIframeAPIReady() {
+      createPlayer();
+    }
+
+    function createPlayer() {
+      if (ytPlayer) {
+        ytPlayer.destroy();
+      }
+      ytPlayer = new YT.Player('ytPlayer', {
+        width: '100%',
+        height: '100%',
+        playerVars: {
+          list: PLAYLIST_ID,
+          listType: 'playlist',
+          autoplay: 1,
+          controls: 1,
+          loop: 1,
+          mute: 1,
+          rel: 0
+        },
+        events: {
+          onError: onPlayerError,
+          onStateChange: onPlayerStateChange
+        }
+      });
+    }
+
+    function onPlayerError(event) {
+      console.warn('YouTube error:', event.data, '- 自動復旧します');
+      // エラーコード: 2=パラメータ不正, 5=HTML5エラー, 100=動画なし, 101/150=埋め込み不可
+      if (event.data === 100 || event.data === 101 || event.data === 150) {
+        // この動画だけスキップして次へ
+        setTimeout(() => {
+          if (ytPlayer && typeof ytPlayer.nextVideo === 'function') {
+            ytPlayer.nextVideo();
+          }
+        }, 2000);
+      } else {
+        // その他のエラーはプレーヤーごと再作成
+        setTimeout(() => createPlayer(), 3000);
+      }
+    }
+
+    function onPlayerStateChange(event) {
+      // 再生リスト末尾で停止した場合、先頭から再スタート
+      if (event.data === YT.PlayerState.ENDED) {
+        ytPlayer.playVideoAt(0);
+      }
+    }
+
     // タイマー変数
     let totalSeconds = 25 * 60; // デフォルト25分
     let initialSeconds = 25 * 60;
@@ -479,6 +565,12 @@
     function resetTimer() {
       stopTimer();
       totalSeconds = initialSeconds;
+      updateDisplay();
+    }
+
+    // 時間の加減（動作中でも使える）
+    function adjustTime(delta) {
+      totalSeconds = Math.max(0, totalSeconds + delta);
       updateDisplay();
     }
 
