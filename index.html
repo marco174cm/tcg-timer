@@ -77,10 +77,51 @@
     .timer-area {
       display: flex;
       flex-direction: column;
-      justify-content: center;
+      justify-content: flex-end;
       align-items: center;
       padding: 2vh 0;
       min-width: 0;
+      gap: 2vh;
+    }
+
+    /* 日付・時刻カード */
+    .datetime-card {
+      background: white;
+      border-radius: 2vw;
+      padding: 2.5vh 3vw;
+      box-shadow:
+        0 10px 40px rgba(91, 174, 232, 0.15),
+        0 0 0 3px rgba(91, 174, 232, 0.1);
+      text-align: center;
+      position: relative;
+      overflow: hidden;
+      width: 100%;
+      max-width: 100%;
+    }
+
+    .datetime-card::before {
+      content: '';
+      position: absolute;
+      top: 0;
+      left: 0;
+      right: 0;
+      height: 6px;
+      background: linear-gradient(90deg, #5BAEE8, #8DC44A);
+    }
+
+    .current-date {
+      font-size: 2.2vw;
+      font-weight: 700;
+      color: #555;
+      letter-spacing: 0.1em;
+    }
+
+    .current-time {
+      font-size: 6vw;
+      font-weight: 800;
+      color: #1A1A1A;
+      line-height: 1.1;
+      font-variant-numeric: tabular-nums;
     }
 
     /* タイマーカード */
@@ -192,9 +233,13 @@
 
     .time-adjust {
       display: flex;
-      gap: 1vw;
+      justify-content: space-between;
       margin-top: 2.5vh;
-      justify-content: center;
+    }
+
+    .adjust-group {
+      display: flex;
+      gap: 0.8vw;
     }
 
     .btn-adjust {
@@ -421,15 +466,23 @@
 
       <!-- タイマーエリア（右） -->
       <section class="timer-area">
+        <div class="datetime-card">
+          <div class="current-date" id="currentDate"></div>
+          <div class="current-time" id="currentTime"></div>
+        </div>
         <div class="timer-card">
           <div class="timer-label">BATTLE TIMER</div>
           <div class="timer-display" id="timerDisplay">25:00</div>
 
           <div class="time-adjust">
-            <button class="btn btn-adjust btn-minus" onclick="adjustTime(-60)">-1:00</button>
-            <button class="btn btn-adjust btn-minus" onclick="adjustTime(-10)">-0:10</button>
-            <button class="btn btn-adjust btn-plus" onclick="adjustTime(10)">+0:10</button>
-            <button class="btn btn-adjust btn-plus" onclick="adjustTime(60)">+1:00</button>
+            <div class="adjust-group">
+              <button class="btn btn-adjust btn-plus" onclick="adjustTime(60)">+1:00</button>
+              <button class="btn btn-adjust btn-plus" onclick="adjustTime(10)">+0:10</button>
+            </div>
+            <div class="adjust-group">
+              <button class="btn btn-adjust btn-minus" onclick="adjustTime(-10)">-0:10</button>
+              <button class="btn btn-adjust btn-minus" onclick="adjustTime(-60)">-1:00</button>
+            </div>
           </div>
 
           <div class="controls">
@@ -573,6 +626,28 @@
       totalSeconds = Math.max(0, totalSeconds + delta);
       updateDisplay();
     }
+
+    // === 日付・時刻表示 ===
+    const dateEl = document.getElementById('currentDate');
+    const timeEl = document.getElementById('currentTime');
+    const weekdays = ['日', '月', '火', '水', '木', '金', '土'];
+
+    function updateClock() {
+      const now = new Date();
+      const y = now.getFullYear();
+      const m = (now.getMonth() + 1).toString().padStart(2, '0');
+      const d = now.getDate().toString().padStart(2, '0');
+      const w = weekdays[now.getDay()];
+      dateEl.textContent = `${y}.${m}.${d}（${w}）`;
+
+      const hh = now.getHours().toString().padStart(2, '0');
+      const mm = now.getMinutes().toString().padStart(2, '0');
+      const ss = now.getSeconds().toString().padStart(2, '0');
+      timeEl.textContent = `${hh}:${mm}:${ss}`;
+    }
+
+    updateClock();
+    setInterval(updateClock, 1000);
 
     // 初期表示
     updateDisplay();
