@@ -84,6 +84,13 @@
       gap: 2vh;
     }
 
+    /* カードラッパー（幅を揃える） */
+    .cards-wrapper {
+      display: flex;
+      flex-direction: column;
+      gap: 2vh;
+    }
+
     /* 日付・時刻カード */
     .datetime-card {
       background: white;
@@ -95,7 +102,6 @@
       text-align: center;
       position: relative;
       overflow: hidden;
-      align-self: stretch;
     }
 
     .datetime-card::before {
@@ -465,6 +471,7 @@
 
       <!-- タイマーエリア（右） -->
       <section class="timer-area">
+        <div class="cards-wrapper">
         <div class="datetime-card">
           <div class="current-date" id="currentDate"></div>
           <div class="current-time" id="currentTime"></div>
@@ -490,6 +497,7 @@
             <button class="btn btn-reset" onclick="resetTimer()">RESET</button>
           </div>
 
+        </div>
         </div>
       </section>
     </div>
