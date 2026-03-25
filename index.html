@@ -649,8 +649,7 @@
 
       const hh = now.getHours().toString().padStart(2, '0');
       const mm = now.getMinutes().toString().padStart(2, '0');
-      const ss = now.getSeconds().toString().padStart(2, '0');
-      timeEl.textContent = `${hh}:${mm}:${ss}`;
+      timeEl.textContent = `${hh}:${mm}`;
     }
 
     updateClock();
