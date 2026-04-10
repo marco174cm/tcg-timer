@@ -43,17 +43,6 @@
       z-index: 0;
     }
 
-    .main-content {
-      display: grid;
-      grid-template-columns: 1fr 1fr;
-      gap: 3vw;
-      padding: 0 3vw;
-      flex: 1;
-      min-height: 0;
-      position: relative;
-      z-index: 1;
-    }
-
     /* ヘッダー：店名 */
     .header {
       padding: 1.5vh 0;
@@ -73,6 +62,63 @@
       border-image: linear-gradient(90deg, #A67CC5, #5BAEE8, #8DC44A, #E07A50) 1;
     }
 
+    /* ========== タイマーモード（デフォルト） ========== */
+    .main-content {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 3vw;
+      padding: 0 3vw;
+      flex: 1;
+      min-height: 0;
+      position: relative;
+      z-index: 1;
+      transition: all 0.4s ease;
+    }
+
+    /* ========== チャンネルモード ========== */
+    .main-content.channel-mode {
+      grid-template-columns: 1fr;
+      justify-items: center;
+    }
+
+    .channel-mode .timer-area {
+      display: none;
+    }
+
+    .channel-mode .left-area {
+      width: 50vw;
+      max-width: 50vw;
+    }
+
+    .channel-mode .datetime-card-channel {
+      display: block;
+    }
+
+    /* チャンネルモード用の時計（通常は非表示） */
+    .datetime-card-channel {
+      display: none;
+      background: white;
+      border-radius: 2vw;
+      padding: 2.5vh 4vw;
+      box-shadow:
+        0 10px 40px rgba(91, 174, 232, 0.15),
+        0 0 0 3px rgba(91, 174, 232, 0.1);
+      text-align: center;
+      position: relative;
+      overflow: hidden;
+      margin-bottom: 1.5vh;
+    }
+
+    .datetime-card-channel::before {
+      content: '';
+      position: absolute;
+      top: 0;
+      left: 0;
+      right: 0;
+      height: 6px;
+      background: linear-gradient(90deg, #5BAEE8, #8DC44A);
+    }
+
     /* タイマーエリア */
     .timer-area {
       display: flex;
@@ -84,7 +130,7 @@
       gap: 2vh;
     }
 
-    /* カードラッパー（幅を揃える） */
+    /* カードラッパー */
     .cards-wrapper {
       display: flex;
       flex-direction: column;
@@ -263,7 +309,6 @@
       color: white;
     }
 
-
     /* 左側エリア（動画側） */
     .left-area {
       display: flex;
@@ -366,8 +411,8 @@
     .color-green { background: linear-gradient(90deg, #8DC44A, #a0d45d); }
     .color-orange { background: linear-gradient(90deg, #E07A50, #e99070); }
 
-    /* ナビゲーションボタン */
-    .nav-btn {
+    /* レイアウト切り替えボタン */
+    .toggle-btn {
       position: fixed;
       bottom: 3vh;
       right: 3vw;
@@ -382,11 +427,9 @@
       color: white;
       box-shadow: 0 4px 20px rgba(166, 124, 197, 0.4);
       transition: all 0.2s ease;
-      text-decoration: none;
-      display: inline-block;
     }
 
-    .nav-btn:hover {
+    .toggle-btn:hover {
       transform: translateY(-2px);
       box-shadow: 0 6px 25px rgba(166, 124, 197, 0.5);
     }
@@ -467,18 +510,19 @@
       <h1 class="shop-name">TCG STATION TSUNASHIMA</h1>
     </header>
 
-    <!-- メインコンテンツ（左右配置） -->
-    <div class="main-content">
+    <!-- メインコンテンツ -->
+    <div class="main-content" id="mainContent">
       <!-- 左側エリア（動画 + QRコード） -->
       <div class="left-area">
+        <!-- チャンネルモード用の時計 -->
+        <div class="datetime-card-channel">
+          <div class="current-date" id="currentDate2"></div>
+          <div class="current-time" id="currentTime2"></div>
+        </div>
+
         <!-- YouTubeエリア -->
         <section class="youtube-area">
           <div class="youtube-wrapper">
-            <!-- ============================================== -->
-            <!-- ここにYouTube再生リストのURLを入れる           -->
-            <!-- YOUR_PLAYLIST_ID を実際のプレイリストIDに変更  -->
-            <!-- 例: PLxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx        -->
-            <!-- ============================================== -->
             <div id="ytPlayer"></div>
           </div>
         </section>
@@ -536,10 +580,27 @@
     </footer>
   </div>
 
-  <!-- ページ切り替えボタン -->
-  <a class="nav-btn" href="vertical.html">CHANNEL PAGE</a>
+  <!-- レイアウト切り替えボタン -->
+  <button class="toggle-btn" id="toggleBtn" onclick="toggleLayout()">CHANNEL MODE</button>
 
   <script>
+    // === レイアウト切り替え ===
+    let isChannelMode = false;
+
+    function toggleLayout() {
+      const mainContent = document.getElementById('mainContent');
+      const toggleBtn = document.getElementById('toggleBtn');
+      isChannelMode = !isChannelMode;
+
+      if (isChannelMode) {
+        mainContent.classList.add('channel-mode');
+        toggleBtn.textContent = 'TIMER MODE';
+      } else {
+        mainContent.classList.remove('channel-mode');
+        toggleBtn.textContent = 'CHANNEL MODE';
+      }
+    }
+
     // === YouTube IFrame Player API ===
     const PLAYLIST_ID = 'PLou8fhsKysc3qEC8m2-E8JUhg0-VxYB_a';
     let ytPlayer = null;
@@ -578,29 +639,25 @@
 
     function onPlayerError(event) {
       console.warn('YouTube error:', event.data, '- 自動復旧します');
-      // エラーコード: 2=パラメータ不正, 5=HTML5エラー, 100=動画なし, 101/150=埋め込み不可
       if (event.data === 100 || event.data === 101 || event.data === 150) {
-        // この動画だけスキップして次へ
         setTimeout(() => {
           if (ytPlayer && typeof ytPlayer.nextVideo === 'function') {
             ytPlayer.nextVideo();
           }
         }, 2000);
       } else {
-        // その他のエラーはプレーヤーごと再作成
         setTimeout(() => createPlayer(), 3000);
       }
     }
 
     function onPlayerStateChange(event) {
-      // 再生リスト末尾で停止した場合、先頭から再スタート
       if (event.data === YT.PlayerState.ENDED) {
         ytPlayer.playVideoAt(0);
       }
     }
 
     // タイマー変数
-    let totalSeconds = 25 * 60; // デフォルト25分
+    let totalSeconds = 25 * 60;
     let initialSeconds = 25 * 60;
     let timerInterval = null;
     let isRunning = false;
@@ -609,14 +666,12 @@
     const startBtn = document.getElementById('startBtn');
     const stopBtn = document.getElementById('stopBtn');
 
-    // タイマー表示を更新
     function updateDisplay() {
       const minutes = Math.floor(totalSeconds / 60);
       const seconds = totalSeconds % 60;
       const display = `${minutes.toString().padStart(2, '0')}:${seconds.toString().padStart(2, '0')}`;
       timerDisplay.textContent = display;
 
-      // 残り3分を切ったら警告色に
       if (totalSeconds < 180) {
         timerDisplay.classList.add('warning');
       } else {
@@ -624,7 +679,6 @@
       }
     }
 
-    // タイマースタート
     function startTimer() {
       if (isRunning) return;
       if (totalSeconds <= 0) return;
@@ -640,7 +694,6 @@
       }, 1000);
     }
 
-    // タイマーストップ
     function stopTimer() {
       isRunning = false;
       if (timerInterval) {
@@ -649,14 +702,12 @@
       }
     }
 
-    // タイマーリセット
     function resetTimer() {
       stopTimer();
       totalSeconds = initialSeconds;
       updateDisplay();
     }
 
-    // 時間の加減（動作中でも使える）
     function adjustTime(delta) {
       totalSeconds = Math.max(0, totalSeconds + delta);
       updateDisplay();
@@ -665,6 +716,8 @@
     // === 日付・時刻表示 ===
     const dateEl = document.getElementById('currentDate');
     const timeEl = document.getElementById('currentTime');
+    const dateEl2 = document.getElementById('currentDate2');
+    const timeEl2 = document.getElementById('currentTime2');
     const weekdays = ['日', '月', '火', '水', '木', '金', '土'];
 
     function updateClock() {
@@ -673,17 +726,21 @@
       const m = (now.getMonth() + 1).toString().padStart(2, '0');
       const d = now.getDate().toString().padStart(2, '0');
       const w = weekdays[now.getDay()];
-      dateEl.textContent = `${y}.${m}.${d}（${w}）`;
+      const dateStr = `${y}.${m}.${d}（${w}）`;
 
       const hh = now.getHours().toString().padStart(2, '0');
       const mm = now.getMinutes().toString().padStart(2, '0');
-      timeEl.textContent = `${hh}:${mm}`;
+      const timeStr = `${hh}:${mm}`;
+
+      dateEl.textContent = dateStr;
+      timeEl.textContent = timeStr;
+      dateEl2.textContent = dateStr;
+      timeEl2.textContent = timeStr;
     }
 
     updateClock();
     setInterval(updateClock, 1000);
 
-    // 初期表示
     updateDisplay();
   </script>
 </body>
