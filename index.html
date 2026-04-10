@@ -366,6 +366,31 @@
     .color-green { background: linear-gradient(90deg, #8DC44A, #a0d45d); }
     .color-orange { background: linear-gradient(90deg, #E07A50, #e99070); }
 
+    /* ナビゲーションボタン */
+    .nav-btn {
+      position: fixed;
+      bottom: 3vh;
+      right: 3vw;
+      z-index: 100;
+      padding: 1.5vh 2.5vw;
+      font-size: 1.4vw;
+      font-weight: 700;
+      border: none;
+      border-radius: 50px;
+      cursor: pointer;
+      background: linear-gradient(135deg, #A67CC5 0%, #5BAEE8 100%);
+      color: white;
+      box-shadow: 0 4px 20px rgba(166, 124, 197, 0.4);
+      transition: all 0.2s ease;
+      text-decoration: none;
+      display: inline-block;
+    }
+
+    .nav-btn:hover {
+      transform: translateY(-2px);
+      box-shadow: 0 6px 25px rgba(166, 124, 197, 0.5);
+    }
+
     /* 装飾用の浮遊するドット */
     .floating-dots {
       position: absolute;
@@ -510,6 +535,9 @@
       <div class="color-bar-segment color-orange"></div>
     </footer>
   </div>
+
+  <!-- ページ切り替えボタン -->
+  <a class="nav-btn" href="vertical.html">CHANNEL PAGE</a>
 
   <script>
     // === YouTube IFrame Player API ===
