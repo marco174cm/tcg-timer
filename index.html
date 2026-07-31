@@ -610,14 +610,19 @@
     tag.src = 'https://www.youtube.com/iframe_api';
     document.head.appendChild(tag);
 
+    let ytErrorCount = 0;
+    const YT_ERROR_THRESHOLD = 8; // これ以上連続で失敗したときだけプレイヤーを作り直す
+
     function onYouTubeIframeAPIReady() {
       createPlayer();
     }
 
     function createPlayer() {
       if (ytPlayer) {
-        ytPlayer.destroy();
+        try { ytPlayer.destroy(); } catch (e) { /* noop */ }
+        ytPlayer = null;
       }
+      ytErrorCount = 0;
       ytPlayer = new YT.Player('ytPlayer', {
         width: '100%',
         height: '100%',
@@ -626,33 +631,69 @@
           listType: 'playlist',
           autoplay: 1,
           controls: 1,
-          loop: 1,
           mute: 1,
           rel: 0
         },
         events: {
+          onReady: onPlayerReady,
           onError: onPlayerError,
           onStateChange: onPlayerStateChange
         }
       });
     }
 
+    // 再生準備完了 → シャッフルを有効化してランダムな動画から再生開始
+    function onPlayerReady(event) {
+      shufflePlaylist();
+    }
+
+    // プレイリストをシャッフルして、ランダムな動画から再生する
+    function shufflePlaylist() {
+      if (!ytPlayer) return;
+      try {
+        if (typeof ytPlayer.setShuffle === 'function') {
+          ytPlayer.setShuffle(true);
+        }
+        const playlist = typeof ytPlayer.getPlaylist === 'function' ? ytPlayer.getPlaylist() : null;
+        if (playlist && playlist.length > 0 && typeof ytPlayer.playVideoAt === 'function') {
+          ytPlayer.playVideoAt(Math.floor(Math.random() * playlist.length));
+        }
+      } catch (e) {
+        console.warn('shuffle failed:', e);
+      }
+    }
+
     function onPlayerError(event) {
       console.warn('YouTube error:', event.data, '- 自動復旧します');
-      if (event.data === 100 || event.data === 101 || event.data === 150) {
+      ytErrorCount++;
+
+      // 非公開・埋め込み不可・削除など(5,100,101,150)は、
+      // プレイヤーを作り直さず「次の動画へスキップ」するだけにする（＝更新に見える現象を防止）
+      if (event.data === 5 || event.data === 100 || event.data === 101 || event.data === 150) {
+        // ただし連続で失敗しすぎた場合のみ、間隔を空けて作り直す（暴走防止）
+        if (ytErrorCount >= YT_ERROR_THRESHOLD) {
+          setTimeout(() => createPlayer(), 10000);
+          return;
+        }
         setTimeout(() => {
           if (ytPlayer && typeof ytPlayer.nextVideo === 'function') {
             ytPlayer.nextVideo();
           }
-        }, 2000);
+        }, 1500);
       } else {
-        setTimeout(() => createPlayer(), 3000);
+        // それ以外のエラーは間隔を長めにとって作り直す
+        setTimeout(() => createPlayer(), 5000);
       }
     }
 
     function onPlayerStateChange(event) {
+      // 正常に再生できたらエラーカウントをリセット
+      if (event.data === YT.PlayerState.PLAYING) {
+        ytErrorCount = 0;
+      }
+      // プレイリストを最後まで再生 → 再シャッフルしてループ
       if (event.data === YT.PlayerState.ENDED) {
-        ytPlayer.playVideoAt(0);
+        shufflePlaylist();
       }
     }
 
