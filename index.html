@@ -647,30 +647,13 @@
       });
     }
 
-    // 再生準備完了 → シャッフルを有効化してランダムな動画から再生開始
+    // 再生準備完了
     function onPlayerReady(event) {
       // iframe にリファラーポリシーを付与（エラー153対策の保険）
       try {
         const iframe = ytPlayer && typeof ytPlayer.getIframe === 'function' ? ytPlayer.getIframe() : null;
         if (iframe) iframe.setAttribute('referrerpolicy', 'strict-origin-when-cross-origin');
       } catch (e) { /* noop */ }
-      shufflePlaylist();
-    }
-
-    // プレイリストをシャッフルして、ランダムな動画から再生する
-    function shufflePlaylist() {
-      if (!ytPlayer) return;
-      try {
-        if (typeof ytPlayer.setShuffle === 'function') {
-          ytPlayer.setShuffle(true);
-        }
-        const playlist = typeof ytPlayer.getPlaylist === 'function' ? ytPlayer.getPlaylist() : null;
-        if (playlist && playlist.length > 0 && typeof ytPlayer.playVideoAt === 'function') {
-          ytPlayer.playVideoAt(Math.floor(Math.random() * playlist.length));
-        }
-      } catch (e) {
-        console.warn('shuffle failed:', e);
-      }
     }
 
     function onPlayerError(event) {
@@ -701,9 +684,11 @@
       if (event.data === YT.PlayerState.PLAYING) {
         ytErrorCount = 0;
       }
-      // プレイリストを最後まで再生 → 再シャッフルしてループ
+      // プレイリストを最後まで再生 → 先頭に戻ってループ
       if (event.data === YT.PlayerState.ENDED) {
-        shufflePlaylist();
+        if (ytPlayer && typeof ytPlayer.playVideoAt === 'function') {
+          ytPlayer.playVideoAt(0);
+        }
       }
     }
 
